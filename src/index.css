@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased text-gray-900;
+  }
+}
+
+.bg-JavaScript-500 { @apply bg-yellow-500; }
+.bg-Python-500 { @apply bg-blue-500; }
+.bg-TypeScript-500 { @apply bg-blue-600; }
+.bg-Java-500 { @apply bg-red-500; }
+.bg-Go-500 { @apply bg-cyan-500; }
+.bg-Rust-500 { @apply bg-orange-500; }
