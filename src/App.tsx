@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
 import { GithubIcon, Code2, Users } from 'lucide-react';
 import ProjectCard from './components/ProjectCard';
 import FilterBar from './components/FilterBar';
+import { useState } from 'react';
 
 // Sample data - in a real app, this would come from an API
 const projects = [

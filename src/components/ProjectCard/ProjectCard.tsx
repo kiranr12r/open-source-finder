@@ -1,4 +1,3 @@
-import React from 'react';
 import { Github } from 'lucide-react';
 import StatsDisplay from '../Stats/StatsDisplay';
 import TagList from '../Tags/TagList';
