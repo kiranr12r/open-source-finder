@@ -1,8 +1,7 @@
-import { GithubIcon, Code2, Users } from 'lucide-react';
-import ProjectCard from './components/ProjectCard';
-import FilterBar from './components/FilterBar';
-import axios from 'axios';
 import { useState, useEffect } from 'react';
+import { GithubIcon, Code2, Users } from 'lucide-react';
+import ProjectCard from './components/ProjectCard/ProjectCard';
+import FilterBar from './components/FilterBar';
 
 interface Project {
   id: number;
@@ -21,46 +20,47 @@ function App() {
   const [languages, setLanguages] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchLanguagesAndProjects = async () => {
+    const fetchLanguages = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/languages');
+        if (!response.ok) throw new Error('Failed to fetch languages');
+        const data = await response.json();
+        setLanguages(data);
+      } catch (err) {
+        setError('Failed to load languages');
+        console.error('Error fetching languages:', err);
+      }
+    };
+    fetchLanguages();
+  }, []);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('https://backend-api-brown-nine.vercel.app/');
-        const fetchedProjects: Project[] = response.data;
-  
-        // Extract unique languages
-        const extractedLanguages = Array.from(
-          new Set(
-            fetchedProjects
-              .map((project) => project.language) // Extract language field
-              .filter((language) => language && language.trim() !== '') // Remove invalid values
-          )
-        );
-  
-        setLanguages(extractedLanguages);
-        setProjects(fetchedProjects);
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (selectedLanguage) params.append('language', selectedLanguage);
+        
+        const response = await fetch(`http://localhost:3000/api/projects?${params}`);
+        if (!response.ok) throw new Error('Failed to fetch projects');
+        const data = await response.json();
+        setProjects(data);
         setError('');
       } catch (err) {
-        setError('Failed to load projects or languages');
-        console.error('Error fetching data:', err);
+        setError('Failed to load projects');
+        console.error('Error fetching projects:', err);
       } finally {
         setLoading(false);
       }
     };
-  
-    fetchLanguagesAndProjects();
-  }, []);
-  
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch =
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLanguage = !selectedLanguage || project.language === selectedLanguage;
-    return matchesSearch && matchesLanguage;
-  });
+
+    fetchProjects();
+  }, [searchQuery, selectedLanguage]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,7 +108,7 @@ function App() {
           onLanguageChange={setSelectedLanguage}
           languages={languages}
         />
-
+        
         {error && (
           <div className="mt-8 text-center text-red-600">
             {error}
@@ -116,19 +116,18 @@ function App() {
         )}
 
         {loading ? (
-          <div className="mt-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-opacity-50 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading projects...</p>
+          <div className="mt-8 text-center text-gray-600">
+            Loading projects...
           </div>
         ) : (
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProjects.map((project) => (
+            {projects.map((project) => (
               <ProjectCard key={project.id} {...project} />
             ))}
           </div>
         )}
 
-        {!loading && !error && filteredProjects.length === 0 && (
+        {!loading && !error && projects.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No projects found matching your criteria.</p>
           </div>
