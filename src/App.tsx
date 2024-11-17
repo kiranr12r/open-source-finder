@@ -1,50 +1,62 @@
 import { GithubIcon, Code2, Users } from 'lucide-react';
 import ProjectCard from './components/ProjectCard';
 import FilterBar from './components/FilterBar';
-import { useState } from 'react';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
 
-// Sample data - in a real app, this would come from an API
-const projects = [
-  {
-    title: 'First Contributions',
-    description: 'A project to help beginners contribute to open source. Make your first contribution in 5 minutes.',
-    language: 'JavaScript',
-    stars: 29000,
-    forks: 53000,
-    issues: 54,
-    tags: ['beginner-friendly', 'hacktoberfest', 'good-first-issue'],
-    repoUrl: 'https://github.com/firstcontributions/first-contributions'
-  },
-  {
-    title: 'TensorFlow',
-    description: 'An open source machine learning framework for everyone',
-    language: 'Python',
-    stars: 178000,
-    forks: 89000,
-    issues: 2341,
-    tags: ['machine-learning', 'ai', 'deep-learning'],
-    repoUrl: 'https://github.com/tensorflow/tensorflow'
-  },
-  {
-    title: 'VS Code',
-    description: 'Visual Studio Code - Open source code editor by Microsoft',
-    language: 'TypeScript',
-    stars: 154000,
-    forks: 28000,
-    issues: 7821,
-    tags: ['editor', 'developer-tools', 'microsoft'],
-    repoUrl: 'https://github.com/microsoft/vscode'
-  }
-];
-
-const languages = ['JavaScript', 'Python', 'TypeScript', 'Java', 'Go', 'Rust'];
+interface Project {
+  id: number;
+  title: string;
+  description: string;
+  language: string;
+  stars: number;
+  forks: number;
+  issues: number;
+  tags: string[];
+  repoUrl: string;
+}
 
 function App() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [languages, setLanguages] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
+  useEffect(() => {
+    const fetchLanguagesAndProjects = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('https://backend-api-brown-nine.vercel.app/');
+        const fetchedProjects: Project[] = response.data;
+  
+        // Extract unique languages
+        const extractedLanguages = Array.from(
+          new Set(
+            fetchedProjects
+              .map((project) => project.language) // Extract language field
+              .filter((language) => language && language.trim() !== '') // Remove invalid values
+          )
+        );
+  
+        setLanguages(extractedLanguages);
+        setProjects(fetchedProjects);
+        setError('');
+      } catch (err) {
+        setError('Failed to load projects or languages');
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchLanguagesAndProjects();
+  }, []);
+  
   const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch =
+      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesLanguage = !selectedLanguage || project.language === selectedLanguage;
     return matchesSearch && matchesLanguage;
@@ -96,14 +108,27 @@ function App() {
           onLanguageChange={setSelectedLanguage}
           languages={languages}
         />
-        
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((project) => (
-            <ProjectCard key={project.title} {...project} />
-          ))}
-        </div>
 
-        {filteredProjects.length === 0 && (
+        {error && (
+          <div className="mt-8 text-center text-red-600">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="mt-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-opacity-50 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading projects...</p>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.map((project) => (
+              <ProjectCard key={project.id} {...project} />
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && filteredProjects.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No projects found matching your criteria.</p>
           </div>
