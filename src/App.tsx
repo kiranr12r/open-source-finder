@@ -15,52 +15,68 @@ interface Project {
   repoUrl: string;
 }
 
+const MOCK_PROJECTS: Project[] = [
+  {
+    id: 1,
+    title: 'React Starter',
+    description: 'A simple starter project for React.js.',
+    language: 'JavaScript',
+    stars: 120,
+    forks: 45,
+    issues: 3,
+    tags: ['React', 'Beginner'],
+    repoUrl: 'https://github.com/example/react-starter',
+  },
+  {
+    id: 2,
+    title: 'Node API',
+    description: 'A basic Node.js API template.',
+    language: 'JavaScript',
+    stars: 95,
+    forks: 30,
+    issues: 5,
+    tags: ['Node.js', 'Backend'],
+    repoUrl: 'https://github.com/example/node-api',
+  },
+  {
+    id: 3,
+    title: 'Python CLI Tool',
+    description: 'A CLI tool written in Python for automation.',
+    language: 'Python',
+    stars: 80,
+    forks: 25,
+    issues: 2,
+    tags: ['Python', 'CLI'],
+    repoUrl: 'https://github.com/example/python-cli',
+  },
+];
+
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchLanguages = async () => {
-      try {
-        const response = await fetch('http://localhost:3000/api/languages');
-        if (!response.ok) throw new Error('Failed to fetch languages');
-        const data = await response.json();
-        setLanguages(data);
-      } catch (err) {
-        setError('Failed to load languages');
-        console.error('Error fetching languages:', err);
-      }
+    // Simulate fetching data
+    const loadProjects = () => {
+      setLoading(true);
+      setTimeout(() => {
+        setProjects(MOCK_PROJECTS);
+        setLanguages([...new Set(MOCK_PROJECTS.map((project) => project.language))]);
+        setLoading(false);
+      }, 1000); // Simulate a delay
     };
-    fetchLanguages();
+
+    loadProjects();
   }, []);
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-        if (searchQuery) params.append('search', searchQuery);
-        if (selectedLanguage) params.append('language', selectedLanguage);
-        
-        const response = await fetch(`http://localhost:3000/api/projects?${params}`);
-        if (!response.ok) throw new Error('Failed to fetch projects');
-        const data = await response.json();
-        setProjects(data);
-        setError('');
-      } catch (err) {
-        setError('Failed to load projects');
-        console.error('Error fetching projects:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProjects();
-  }, [searchQuery, selectedLanguage]);
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLanguage = selectedLanguage ? project.language === selectedLanguage : true;
+    return matchesSearch && matchesLanguage;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,12 +124,6 @@ function App() {
           onLanguageChange={setSelectedLanguage}
           languages={languages}
         />
-        
-        {error && (
-          <div className="mt-8 text-center text-red-600">
-            {error}
-          </div>
-        )}
 
         {loading ? (
           <div className="mt-8 text-center text-gray-600">
@@ -121,13 +131,13 @@ function App() {
           </div>
         ) : (
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
+            {filteredProjects.map((project) => (
               <ProjectCard key={project.id} {...project} />
             ))}
           </div>
         )}
 
-        {!loading && !error && projects.length === 0 && (
+        {!loading && filteredProjects.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No projects found matching your criteria.</p>
           </div>
